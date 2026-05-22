@@ -10,40 +10,8 @@ dashboard.
 
 ## 🏗️ Architecture
 
-```
-Spotify API  ──daily──►  EventBridge CloudWatch  ──trigger──►  AWS Lambda (Python)
-                                                                      │
-                                                               writes JSON
-                                                                      ▼
-                                                          Amazon S3 — raw zone
-                                                      (spotify-pipeline-raw/)
-                                                                      │
-                                                              object put event
-                                                                      ▼
-                                                          Apache Airflow DAG
-                                                      (transforms + loads data)
-                                                                      │
-                                                               writes JSON
-                                                                      ▼
-                                                       Amazon S3 — transformed
-                                                  (spotify-pipeline-transformed/)
-                                                        │               │
-                                               crawl schema        crawl schema
-                                                        ▼               ▼
-                                             AWS Glue Crawler   Glue Data Catalog
-                                                        │               │
-                                                        └──────┬────────┘
-                                                               ▼
-                                                        Amazon Athena
-                                                    (serverless SQL queries)
-                                                               │
-                                                           visualise
-                                                               ▼
-                                                        Looker Studio
-                                                   (dashboard — charts + insights)
-```
+<img width="1302" height="816" alt="Gemini_Generated_Image_59r7uq59r7uq59r7" src="https://github.com/user-attachments/assets/6d64ed3f-2f3c-414a-a4de-251969b04a18" />
 
----
 
 ## ⚙️ Tech Stack
 
@@ -160,6 +128,7 @@ aws s3api create-bucket \
 aws s3api put-object --bucket de-spotify-pipeline-1377 --key spotify-pipeline-raw/
 aws s3api put-object --bucket de-spotify-pipeline-1377 --key spotify-pipeline-transformed/
 ```
+<img width="1470" height="830" alt="Screenshot 2026-05-23 at 12 03 27 AM" src="https://github.com/user-attachments/assets/eac097ea-1e01-4842-b3b9-2d69bf47bc5a" />
 
 ---
 
@@ -178,6 +147,8 @@ Set these **Environment Variables** in the Lambda console:
 | `SPOTIFY_CLIENT_SECRET`| your Spotify app client secret|
 | `S3_BUCKET`            | `de-spotify-pipeline-1377`   |
 | `S3_PREFIX`            | `spotify-pipeline-raw`       |
+
+<img width="1470" height="830" alt="Screenshot 2026-05-23 at 12 57 00 AM" src="https://github.com/user-attachments/assets/adab1294-41d7-4873-bf15-cc390baa53d9" />
 
 ---
 
@@ -200,17 +171,23 @@ Set these **Airflow Variables** (Admin → Variables):
 | `TRANSFORMED_PREFIX`  | `spotify-pipeline-transformed`   |
 | `AWS_REGION`          | `ap-south-1`                     |
 
+<img width="1470" height="830" alt="Screenshot 2026-05-22 at 3 19 39 PM" src="https://github.com/user-attachments/assets/41c5c7c9-75f3-4eaf-ab01-ab4ae23300fb" />
+
 ---
 
 ### 6. Set up Glue Crawler
 
 Follow the guide in [`glue/crawler_setup.md`](glue/crawler_setup.md).
 
+<img width="1470" height="830" alt="Screenshot 2026-05-21 at 3 18 34 PM" src="https://github.com/user-attachments/assets/b5f00bcb-9551-44e0-ac4a-adb005307b94" />
+
 ---
 
 ### 7. Run Athena queries
 
 Open the Athena console → run the queries in [`athena/queries.sql`](athena/queries.sql).
+
+<img width="1470" height="830" alt="Screenshot 2026-05-21 at 3 58 18 PM" src="https://github.com/user-attachments/assets/66ca9580-5462-40dc-8552-f4509c5b705a" />
 
 ---
 
