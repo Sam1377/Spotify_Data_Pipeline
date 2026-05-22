@@ -1,0 +1,96 @@
+# docker-compose.yml — Apache Airflow (standalone, LocalExecutor)
+# Based on the official Airflow 2.9 docker-compose reference.
+# Usage:
+#   docker compose up -d          # start
+#   docker compose down           # stop (keeps volumes)
+#   docker compose down -v        # stop + wipe DB
+
+version: "3.8"
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.1-python3.11
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ""          # set a real key in production
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    # ── AWS credentials (pass via .env or IAM role) ─────────────────────
+    AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:-ap-south-1}
+    # ── Airflow Variables used by the DAG ────────────────────────────────
+    AIRFLOW_VAR_S3_BUCKET:            ${S3_BUCKET:-de-spotify-pipeline-1377}
+    AIRFLOW_VAR_RAW_PREFIX:           ${RAW_PREFIX:-spotify-pipeline-raw}
+    AIRFLOW_VAR_TRANSFORMED_PREFIX:   ${TRANSFORMED_PREFIX:-spotify-pipeline-transformed}
+    AIRFLOW_VAR_AWS_REGION:           ${AWS_DEFAULT_REGION:-ap-south-1}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+
+  # ── Metadata DB ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER:     airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB:       airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  # ── DB init (one-shot) ────────────────────────────────────────────────────
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Sahil \
+          --lastname Ballewar \
+          --role Admin \
+          --email admin@example.com
+    environment:
+      <<: *airflow-common-env
+    restart: on-failure
+
+  # ── Scheduler ────────────────────────────────────────────────────────────
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+
+  # ── Webserver  (http://localhost:8080) ───────────────────────────────────
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+volumes:
+  postgres-db-volume:
