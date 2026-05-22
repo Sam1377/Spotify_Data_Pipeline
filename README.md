@@ -148,7 +148,7 @@ Set these **Environment Variables** in the Lambda console:
 | `S3_BUCKET`            | `de-spotify-pipeline-1377`   |
 | `S3_PREFIX`            | `spotify-pipeline-raw`       |
 
-<img width="1470" height="830" alt="Screenshot 2026-05-23 at 12 57 00 AM" src="https://github.com/user-attachments/assets/adab1294-41d7-4873-bf15-cc390baa53d9" />
+<img width="1470" height="830" alt="Screenshot 2026-05-23 at 1 11 41 AM" src="https://github.com/user-attachments/assets/e751f6ca-2f65-4979-b823-35b8d0b370b1" />
 
 ---
 
